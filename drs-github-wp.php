@@ -5,7 +5,7 @@
  * Description: A collection of useful GitHub Widgets
  * Author: Daniel Smith <daniel@danielrs.com>
  * Author URI: http://danielrs.com
- * Version: 0.1
+ * Version: 0.2
  * License: GPL2
  *
  * Copyright 2012  Daniel Smith  (email : daniel@danielrs.com)
@@ -22,7 +22,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+require_once('lib/Github/Autoloader.php');
+Github_Autoloader::register();
 
+require_once('shortcodes.php');
 require_once('repo-widget.php');
 
 add_action( 'widgets_init', create_function( '', 'register_widget("DRSGitHub_Widget");' ) );

@@ -1,6 +1,4 @@
 <?php
-require_once('lib/Github/Autoloader.php');
-Github_Autoloader::register();
 defined('ABSPATH') or die("Cannot access pages directly.");
 defined("DS") or define("DS", DIRECTORY_SEPARATOR);
 
