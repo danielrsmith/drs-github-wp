@@ -1,12 +1,4 @@
 <?php
-/**
- * Plugin Name: GitHub Widget
- * Description: A collection of useful GitHub Widgets
- * Author: Daniel Smith <daniel@danielrs.com>
- * Version: 0.1
- * Author URI: http://danielrs.com
- */
-
 require_once('lib/Github/Autoloader.php');
 Github_Autoloader::register();
 defined('ABSPATH') or die("Cannot access pages directly.");
