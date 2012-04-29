@@ -1,95 +1,232 @@
 <?php
-/*
-Plugin Name: WP-GitHub
-Plugin URI: http://URI_Of_Page_Describing_Plugin_and_Updates
-Description: A brief description of the Plugin.
-Version: 0.1
-Author: Daniel Smith
-Author URI: http://danielrs.com
-License: GPL2
+/**
+ * Plugin Name: GitHub Widget
+ * Description: A collection of useful GitHub Widgets
+ * Author: Daniel Smith <daniel@danielrs.com>
+ * Version: 0.1
+ * Author URI: http://danielrs.com
+ */
 
-Copyright 2011  Daniel Smith  (email : daniel@danielrs.com)
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License, version 2, as 
-    published by the Free Software Foundation.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
-ini_set('display_errors', 1);
 require_once 'lib/Github/Autoloader.php';
 Github_Autoloader::register();
+defined('ABSPATH') or die("Cannot access pages directly.");
+defined("DS") or define("DS", DIRECTORY_SEPARATOR);
 
-$github = new Github_Client();
+add_action( 'widgets_init', create_function( '', 'register_widget("DRSGitHub_Widget");' ) );
 
-class DRSGitHubProfileWidget extends WP_Widget
+/**
+ * 
+ * @author Daniel Smith <daniel@danielrs.com>
+ * 
+ */
+class DRSGitHub_Widget extends WP_Widget
 {
-	public function __construct()
-	{		
-        parent::WP_Widget('drs_github', 'GitHub Profile Widget', array('A widget to display your GitHub Profile'));
-	}
+	protected $widget = array(
+		'name' => 'GitHub Repository Widget',
+		'description' => 'GitHub repository widget',
+		'do_wrapper' => true, 
+		'view' => false,
+		
+		'fields' => array(
+			array(
+				'name' => 'Title',
+				'desc' => '',
+				'id' => 'title',
+				'type' => 'text',
+				'std' => 'My GitHub Repositories'
+			),
+			array(
+				'name' => 'GitHub Username',
+				'desc' => '',
+				'id' => 'username',
+				'type' => 'text',
+				'std' => 'GitHub Username'
+			),
+			array(
+				'name' => 'Items to Display',
+				'desc' => 'Maximum number of repositories to show',
+				'id' => 'repo_count',
+				'type' => 'text',
+				'std' => '3'
+			),
+			array(
+				'name' => 'Open repositories in a new window?',
+				'desc' => '',
+				'id' => 'new_window',
+				'type' => 'checkbox'
+			),
+						
+		)
+	);
 	
-	public function widget($args, $instance)
+	/**
+	 * @param array $widget
+	 * @param array $params
+	 * @param array $sidebar
+	 */
+	function html($widget, $params, $sidebar)
 	{
-		$content = 'Github Content Here';
+		$github = new Github_Client();
+		$user_repos = $github->getRepoApi()->getUserRepos($params['username']);
+		$rand_repos = array_rand($user_repos, $params['repo_count']);
 		
-		extract($args);
-		$title = apply_filters('widget_title', $instance['title']);
+		echo '<h3 class="widget-title">' . $params['title'] . '</h3>';
+		echo '<ul>';
 		
-		echo $before_widget;
-		
-		if($title)
+		foreach($rand_repos as $repo_key)
 		{
-			echo $before_title . $title . $after_title;	
+			$repo = $user_repos[$repo_key];
+			$new_window = '';
+			
+			if($params['new_window'])
+			{
+				$new_window = 'target="_blank"';
+			}
+			echo sprintf("<li><a href=\"%s\" title=\"%s\" %s>%s</a></li>", $repo['url'], $repo['description'] , $new_window ,$repo['name']);
 		}
 		
-		echo $content;
+		echo '</ul>';
+	}
+
+	function DRSGitHub_Widget()
+	{
+		$classname = sanitize_title(get_class($this));
+
+		parent::WP_Widget( 
+			$id = $classname, 
+			$name = (isset($this->widget['name'])?$this->widget['name']:$classname), 
+			$options = array( 'description'=>$this->widget['description'] )
+		);
+	}
+	
+	/**
+	 * @param array $sidebar
+	 * @param array $params
+	 */
+	function widget($sidebar, $params)
+	{
+		//initializing variables
+		$this->widget['number'] = $this->number;
+		$title = apply_filters( 'DRSGitHub_Widget_title', $params['title'] );
+		$do_wrapper = (!isset($this->widget['do_wrapper']) || $this->widget['do_wrapper']);
 		
-		echo $after_widget;
+		if ( $do_wrapper ) 
+		{
+			echo $sidebar['before_widget'];
+		}
+		
+		//loading a file that is isolated from other variables
+		if (file_exists($this->widget['view']))
+		{
+			$this->getViewFile($widget, $params, $sidebar);
+		}
+			
+		if ($this->widget['view'])
+		{
+			echo $this->widget['view'];
+		}	
+		else 
+		{
+			$this->html($this->widget, $params, $sidebar);
+		}
+			
+		if ($do_wrapper)
+		{ 
+			echo $sidebar['after_widget'];
+		}
 	}
 	
-	public function form($instance)
+
+	function getViewFile($widget, $params, $sidebar) 
 	{
-		if($instance)
-		{
-			$title = esc_attr($instance['title']);
-		}
-		else
-		{
-			$title = __('New title', 'text_domain');
-		}
-		?>
-				<p>
-				<label for="<?php echo $this->get_field_id('title'); ?>"><?php _e('Title:'); ?></label> 
-				<input class="widefat" id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" type="text" value="<?php echo $title; ?>" />
-				</p>
-		<?php 
+		require $this->widget['view'];
 	}
-	
-	public function update($new_instance, $old_instance)
+
+
+	function form($instance)
 	{
-		$instance = $old_instance;
-		$instance['title'] = strip_tags($new_instance['title']);
+		//reasons to fail
+		if (empty($this->widget['fields'])) return false;
+		
+		$defaults = array(
+			'id' => '',
+			'name' => '',
+			'desc' => '',
+			'type' => '',
+			'options' => '',
+			'std' => '',
+		);
+		
+		do_action('DRSGitHub_Widget_before');
+		foreach ($this->widget['fields'] as $field)
+		{
+			//making sure we don't throw strict errors
+			$field = wp_parse_args($field, $defaults);
+
+			$meta = false;
+			if (isset($field['id']) && array_key_exists($field['id'], $instance))
+				@$meta = attribute_escape($instance[$field['id']]);
+
+			if ($field['type'] != 'custom' && $field['type'] != 'metabox') 
+			{
+				echo '<p><label for="',$this->get_field_id($field['id']),'">';
+			}
+			if (isset($field['name']) && $field['name']) echo $field['name'],':';
+
+			switch ($field['type'])
+			{
+				case 'text':
+					echo '<input type="text" name="', $this->get_field_name($field['id']), '" id="', $this->get_field_id($field['id']), '" value="', ($meta ? $meta : @$field['std']), '" class="vibe_text" />', 
+					'<br/><span class="description">', @$field['desc'], '</span>';
+					break;
+				case 'textarea':
+					echo '<textarea class="vibe_textarea" name="', $this->get_field_name($field['id']), '" id="', $this->get_field_id($field['id']), '" cols="60" rows="4" style="width:97%">', $meta ? $meta : @$field['std'], '</textarea>', 
+					'<br/><span class="description">', @$field['desc'], '</span>';
+					break;
+				case 'select':
+					echo '<select class="vibe_select" name="', $this->get_field_name($field['id']), '" id="', $this->get_field_id($field['id']), '">';
+
+					foreach ($field['options'] as $value => $option)
+					{
+ 					   $selected_option = ( $value ) ? $value : $option;
+					    echo '<option', ($value ? ' value="' . $value . '"' : ''), ($meta == $selected_option ? ' selected="selected"' : ''), '>', $option, '</option>';
+					}
+
+					echo '</select>', 
+					'<br/><span class="description">', @$field['desc'], '</span>';
+					break;
+				case 'radio':
+					foreach ($field['options'] as $option)
+					{
+						echo '<input class="vibe_radio" type="radio" name="', $this->get_field_name($field['id']), '" value="', $option['value'], '"', ($meta == $option['value'] ? ' checked="checked"' : ''), ' />', 
+						$option['name'];
+					}
+					echo '<br/><span class="description">', @$field['desc'], '</span>';
+					break;
+				case 'checkbox':
+					echo '<input type="hidden" name="', $this->get_field_name($field['id']), '" id="', $this->get_field_id($field['id']), '" /> ', 
+						 '<input class="vibe_checkbox" type="checkbox" name="', $this->get_field_name($field['id']), '" id="', $this->get_field_id($field['id']), '"', $meta ? ' checked="checked"' : '', ' /> ', 
+					'<br/><span class="description">', @$field['desc'], '</span>';
+					break;
+				case 'custom':
+					echo $field['std'];
+					break;
+			}
+
+			if ($field['type'] != 'custom' && $field['type'] != 'metabox') 
+			{
+				echo '</label></p>';
+			}
+		}
+		do_action('DRSGitHub_Widget_after');
+		return true;
+	}
+
+	function update($new_instance, $old_instance)
+	{
+		// processes widget options to be saved
+		$instance = wp_parse_args($new_instance, $old_instance);
 		return $instance;
 	}
+
 }
-
-function initDRSGitHub()
-{
-	register_widget('DRSGitHubProfileWidget');
-}
-
-add_option('GitHub User Name');
-add_option('GitHub Password');
-add_action('widgets_init', 'initDRSGitHub');
-
-
-
-?>
