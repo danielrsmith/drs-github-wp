@@ -92,6 +92,7 @@ class DRSGitHub_Widget extends WP_Widget
 			}
 			
 			echo '</ul>';
+			echo '<a href="http://github.com/' . $params['username'] . '"><span>Show all</span></a>';
 		}
 		else 
 		{
