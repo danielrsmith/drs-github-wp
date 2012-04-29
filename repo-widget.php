@@ -7,12 +7,10 @@
  * Author URI: http://danielrs.com
  */
 
-require_once 'lib/Github/Autoloader.php';
+require_once('lib/Github/Autoloader.php');
 Github_Autoloader::register();
 defined('ABSPATH') or die("Cannot access pages directly.");
 defined("DS") or define("DS", DIRECTORY_SEPARATOR);
-
-add_action( 'widgets_init', create_function( '', 'register_widget("DRSGitHub_Widget");' ) );
 
 /**
  * 
