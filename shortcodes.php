@@ -1,5 +1,14 @@
 <?php
+/*
+ * Github Shortcodes
+ */
 
+/**
+ * 
+ * Adds the github-repo shortcode to display pertinant repository information on a post or page.
+ * @param array $atts
+ * @return string
+ */
 function github_repo($atts)
 {
 	extract(shortcode_atts(
@@ -31,4 +40,5 @@ function github_repo($atts)
 	return $content;
 }
 
+//Adds shortcode to Wordpress
 add_shortcode('github-repo', 'github_repo');
