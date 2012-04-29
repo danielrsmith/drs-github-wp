@@ -66,26 +66,49 @@ class DRSGitHub_Widget extends WP_Widget
 	 */
 	function html($widget, $params, $sidebar)
 	{
+		echo '<h3 class="widget-title">' . $params['title'] . '</h3>';
+		
 		$github = new Github_Client();
 		$user_repos = $github->getRepoApi()->getUserRepos($params['username']);
-		$rand_repos = array_rand($user_repos, $params['repo_count']);
+		$num_of_repos = count($user_repos);
 		
-		echo '<h3 class="widget-title">' . $params['title'] . '</h3>';
-		echo '<ul>';
-		
-		foreach($rand_repos as $repo_key)
+		if(!empty($user_repos))
 		{
-			$repo = $user_repos[$repo_key];
-			$new_window = '';
 			
-			if($params['new_window'])
+			if($num_of_repos < $params['repo_count'])
 			{
-				$new_window = 'target="_blank"';
+				$params['repo_count'] = $num_of_repos;
 			}
-			echo sprintf("<li><a href=\"%s\" title=\"%s\" %s>%s</a></li>", $repo['url'], $repo['description'] , $new_window ,$repo['name']);
+			
+			
+			$rand_repos = array_rand($user_repos, $params['repo_count']);
+	
+			if(!is_array($rand_repos))
+			{
+				$rand_repos =  array($rand_repos);
+			}
+			
+			
+			echo '<ul>';
+			
+			foreach($rand_repos as $repo_key)
+			{
+				$repo = $user_repos[$repo_key];
+				$new_window = '';
+				
+				if($params['new_window'])
+				{
+					$new_window = 'target="_blank"';
+				}
+				echo sprintf("<li><a href=\"%s\" title=\"%s\" %s>%s</a></li>", $repo['url'], $repo['description'] , $new_window ,$repo['name']);
+			}
+			
+			echo '</ul>';
 		}
-		
-		echo '</ul>';
+		else 
+		{
+			echo 'This user does not have any public repositories.';
+		}
 	}
 
 	function DRSGitHub_Widget()
