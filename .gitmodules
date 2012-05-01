@@ -1,3 +1,6 @@
 [submodule "php-github-api"]
 	path = php-github-api
 	url = git://github.com/ornicar/php-github-api.git
+[submodule "update"]
+	path = update
+	url = git://github.com/danielrsmith/WordPress-GitHub-Plugin-Updater.git
